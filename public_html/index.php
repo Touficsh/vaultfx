@@ -25,8 +25,20 @@ ini_set('allow_url_include', '0');
 error_reporting(E_ALL);
 
 // ── Load configuration (outside web root) ─────────────────────
-$configFile = dirname(__DIR__) . '/config/config.php';
-if (!file_exists($configFile)) {
+// Auto-discover config by walking up the directory tree.
+// Works whether deployed directly in public_html/ OR in a
+// subdomain subfolder like public_html/fxvault/.
+$configFile = null;
+$searchDir  = __DIR__;
+for ($i = 0; $i < 5; $i++) {
+    $searchDir = dirname($searchDir);
+    $candidate = $searchDir . '/config/config.php';
+    if (file_exists($candidate)) {
+        $configFile = $candidate;
+        break;
+    }
+}
+if ($configFile === null) {
     http_response_code(503);
     die('Application not configured. Please run the installer.');
 }
@@ -40,8 +52,16 @@ date_default_timezone_set(APP_TIMEZONE);
 
 // ── Check if installed ────────────────────────────────────────
 if (!file_exists(INSTALL_LOCK_FILE)) {
-    // Redirect to installer
-    header('Location: ../install/install.php');
+    // Redirect to installer — path is relative to APP_ROOT, not web root
+    $installerUrl = rtrim(APP_URL, '/') . '/../../install/install.php';
+    // Simpler: use an absolute filesystem path redirect via direct include
+    $installerPath = APP_ROOT . '/install/install.php';
+    if (file_exists($installerPath)) {
+        require_once $installerPath;
+    } else {
+        http_response_code(503);
+        die('Installer not found. Please upload install/install.php to ' . APP_ROOT . '/install/');
+    }
     exit;
 }
 

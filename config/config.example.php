@@ -32,13 +32,17 @@ define('DB_INSTALL_USER', 'your_db_user');
 define('DB_INSTALL_PASS', 'your_db_password');
 
 // ── Paths ─────────────────────────────────────────────────────
-// On Hostinger: APP_ROOT = /home/username  (one level above public_html)
-// dirname(__DIR__) automatically resolves this if config/ sits beside public_html/
+// APP_ROOT = your Hostinger home directory (contains config/, logs/, public_html/)
+// dirname(__DIR__) resolves correctly when config/ sits beside public_html/
 define('APP_ROOT',       dirname(__DIR__));
 define('CONFIG_PATH',    APP_ROOT . '/config');
 define('LOG_PATH',       APP_ROOT . '/logs');
 define('EXPORT_PATH',    APP_ROOT . '/logs/audit_export');
-define('WEB_ROOT',       APP_ROOT . '/public_html');
+
+// WEB_ROOT = the folder your app files live in (inside public_html)
+// ▶ If deployed directly in public_html/:       APP_ROOT . '/public_html'
+// ▶ If deployed in a subdomain folder fxvault/: APP_ROOT . '/public_html/fxvault'
+define('WEB_ROOT',       APP_ROOT . '/public_html/fxvault');
 
 // ── Application ───────────────────────────────────────────────
 define('APP_NAME',       'VaultFX');
