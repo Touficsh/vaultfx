@@ -1,6 +1,6 @@
 # ============================================================
-# VaultFX — Apache/LiteSpeed Security Configuration
-# Hostinger Business Shared Hosting compatible
+# VaultFX — Apache/LiteSpeed .htaccess
+# Hostinger shared hosting compatible
 # ============================================================
 
 # ── Force HTTPS ────────────────────────────────────────────────
@@ -15,50 +15,24 @@
     RewriteRule (^|/)\.(?!well-known) - [F,L]
 
     # Route all requests through index.php (front controller)
-    # EXCEPT: assets, api endpoints, and actual files
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/assets/
-    RewriteCond %{REQUEST_URI} !^/api/
     RewriteRule ^ index.php [L,QSA]
 </IfModule>
 
 # ── Security Headers ───────────────────────────────────────────
 <IfModule mod_headers.c>
-    # HSTS — Force HTTPS for 1 year, all subdomains
-    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-
-    # Clickjacking prevention
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
     Header always set X-Frame-Options "DENY"
-
-    # MIME type sniffing prevention
     Header always set X-Content-Type-Options "nosniff"
-
-    # Referrer policy — don't leak internal URLs
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
-
-    # Permissions policy — disable browser features not used by app
-    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), accelerometer=(), gyroscope=(), magnetometer=()"
-
-    # Content Security Policy — strict whitelist
-    # Note: adjust font-src and style-src if hosting fonts locally
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'; worker-src 'none'; manifest-src 'self';"
-
-    # Cross-Origin policies
-    Header always set Cross-Origin-Opener-Policy "same-origin"
-    Header always set Cross-Origin-Resource-Policy "same-origin"
-    Header always set Cross-Origin-Embedder-Policy "require-corp"
-
-    # Remove server version headers
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none';"
     Header always unset X-Powered-By
-    Header always unset Server
-    Header always unset X-AspNet-Version
-    Header always unset X-AspNetMvc-Version
 </IfModule>
 
 # ── Block Direct Access to Sensitive Files ─────────────────────
-# Deny access to PHP includes, config fragments, backups, logs, etc.
-<FilesMatch "\.(env|log|sql|bak|backup|config|ini|sh|bash|yml|yaml|lock|md|txt|git|svn|htpasswd|htaccess)$">
+<FilesMatch "\.(env|log|sql|bak|backup|ini|sh|bash|yml|yaml|lock|git|svn|htpasswd)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -68,17 +42,14 @@
     </IfModule>
 </FilesMatch>
 
-# Allow only the main entry points
-<FilesMatch "^(index|api)\.php$">
-    <IfModule mod_authz_core.c>
-        Require all granted
-    </IfModule>
-</FilesMatch>
-
-# Block direct access to all PHP files except index.php and api/*.php
+# ── Block Direct Access to PHP Files (except index.php) ────────
 <FilesMatch "\.php$">
     <IfModule mod_authz_core.c>
         Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
     </IfModule>
 </FilesMatch>
 
@@ -87,93 +58,42 @@
     <IfModule mod_authz_core.c>
         Require all granted
     </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Allow from all
+    </IfModule>
 </Files>
-
-# Allow api/ directory PHP files
-<Directory "api">
-    <FilesMatch "\.php$">
-        <IfModule mod_authz_core.c>
-            Require all granted
-        </IfModule>
-    </FilesMatch>
-</Directory>
 
 # ── Disable Directory Listing ──────────────────────────────────
 Options -Indexes
-Options -FollowSymLinks
-Options -MultiViews
 
-# ── Disable Server Signature ───────────────────────────────────
-ServerSignature Off
-
-# ── Block Common Attack Patterns ──────────────────────────────
-<IfModule mod_rewrite.c>
-    # Block XSS in query strings
-    RewriteCond %{QUERY_STRING} (<|%3C).*script.*(>|%3E) [NC,OR]
-    RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
-    RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2}) [OR]
-    RewriteCond %{QUERY_STRING} proc/self/environ [OR]
-    RewriteCond %{QUERY_STRING} mosConfig_[a-zA-Z_]{1,21}(=|%3D) [OR]
-    RewriteCond %{QUERY_STRING} base64_encode.*(.*) [OR]
-    RewriteCond %{QUERY_STRING} (<|%3C)([^s]*s)+cript.*(>|%3E) [NC,OR]
-    RewriteCond %{QUERY_STRING} (\|%7C)(=|%3D)
-    RewriteRule .* - [F,L]
-
-    # Block null bytes
-    RewriteCond %{QUERY_STRING} \\0 [OR]
-    RewriteCond %{REQUEST_URI} \\0
-    RewriteRule .* - [F,L]
-</IfModule>
-
-# ── Prevent PHP Execution in Uploads ──────────────────────────
-<Directory "uploads">
-    <FilesMatch "\.(php|php3|php4|php5|php7|phtml|phar|pl|py|sh|cgi)$">
-        <IfModule mod_authz_core.c>
-            Require all denied
-        </IfModule>
-    </FilesMatch>
-    Options -ExecCGI
-    RemoveHandler .php .php3 .php4 .php5 .php7 .phtml
-    RemoveType application/x-httpd-php
-</Directory>
-
-# ── File Upload & Resource Limits ─────────────────────────────
+# ── PHP Settings (shared hosting compatible) ───────────────────
 <IfModule mod_php.c>
     php_value upload_max_filesize 2M
     php_value post_max_size 2M
     php_value max_execution_time 30
-    php_value max_input_time 30
     php_value memory_limit 128M
-    php_value max_input_vars 1000
-
-    # PHP Security settings (override php.ini where possible)
     php_flag display_errors Off
     php_flag log_errors On
-    php_flag expose_php Off
-    php_flag allow_url_fopen Off
-    php_flag allow_url_include Off
-    php_flag session.use_strict_mode On
     php_flag session.cookie_httponly On
     php_flag session.cookie_secure On
-    php_value session.cookie_samesite Strict
     php_flag session.use_only_cookies On
-    php_flag session.use_trans_sid Off
 </IfModule>
 
 # ── Cache Control for Assets ───────────────────────────────────
-<FilesMatch "\.(css|js)$">
+<FilesMatch "\.(css|js|svg|png|jpg|ico|woff2)$">
     <IfModule mod_headers.c>
-        Header set Cache-Control "public, max-age=86400, must-revalidate"
+        Header set Cache-Control "public, max-age=86400"
     </IfModule>
 </FilesMatch>
 
-# No caching for PHP pages (handled in PHP too, belt-and-suspenders)
-<FilesMatch "\.php$">
-    <IfModule mod_headers.c>
-        Header always set Cache-Control "no-store, no-cache, must-revalidate"
-        Header always set Pragma "no-cache"
-    </IfModule>
-</FilesMatch>
+# ── Block Common Attack Patterns ──────────────────────────────
+<IfModule mod_rewrite.c>
+    RewriteCond %{QUERY_STRING} (<|%3C).*script.*(>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+    RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+    RewriteRule .* - [F,L]
+</IfModule>
 
 # ── MIME Types ─────────────────────────────────────────────────
 <IfModule mod_mime.c>
@@ -181,15 +101,13 @@ ServerSignature Off
     AddType image/svg+xml .svg
 </IfModule>
 
-# ── Block Suspicious User Agents ──────────────────────────────
-<IfModule mod_rewrite.c>
-    RewriteCond %{HTTP_USER_AGENT} (nikto|sqlmap|nmap|masscan|nessus|openvas|w3af|skipfish) [NC]
-    RewriteRule .* - [F,L]
-</IfModule>
-
 # ── Protect This File ─────────────────────────────────────────
 <Files ".htaccess">
     <IfModule mod_authz_core.c>
         Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
     </IfModule>
 </Files>
