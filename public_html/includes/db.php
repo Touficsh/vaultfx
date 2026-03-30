@@ -46,7 +46,7 @@ class DB
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,      // Real prepared statements
             PDO::ATTR_PERSISTENT         => false,      // No persistent connections on shared hosting
-            \Pdo\Mysql::ATTR_FOUND_ROWS   => true,       // Consistent rowCount() behavior
+            PDO::MYSQL_ATTR_FOUND_ROWS   => true,        // Consistent rowCount() behavior
             PDO::ATTR_STRINGIFY_FETCHES  => false,
         ];
 
