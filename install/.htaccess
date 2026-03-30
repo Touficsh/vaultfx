@@ -1,0 +1,11 @@
+# Block all access to the install directory after installation
+# Uncomment the lines below after setup is complete:
+
+# <IfModule mod_authz_core.c>
+#     Require all denied
+# </IfModule>
+
+# Until then, restrict to local access only for safety
+<IfModule mod_authz_core.c>
+    Require local
+</IfModule>

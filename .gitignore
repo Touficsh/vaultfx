@@ -1,0 +1,37 @@
+# ============================================================
+# VaultFX — .gitignore
+# ============================================================
+
+# ── Sensitive config (NEVER commit) ─────────────────────────
+config/config.php
+config/encryption-key.php
+config/install.lock
+
+# ── Runtime / Logs ──────────────────────────────────────────
+logs/*.log
+logs/audit_export/
+*.log
+
+# ── Install lock ─────────────────────────────────────────────
+install/install.lock
+
+# ── macOS ────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# ── Editor ───────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── PHP composer (if ever added) ─────────────────────────────
+vendor/
+composer.lock
+
+# ── Deployment artifacts ─────────────────────────────────────
+*.zip
+hostinger-deploy/
