@@ -20,7 +20,7 @@
  */
 
 define('VAULTFX_BOOT', true);
-require_once dirname(__DIR__, 2) . '/config/config.php';
+require_once __DIR__ . '/bootstrap.php';
 
 // ── PHP hardening ──────────────────────────────────────────────
 ini_set('display_errors', '0');

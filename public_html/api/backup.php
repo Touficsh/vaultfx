@@ -12,7 +12,7 @@
  */
 
 define('VAULTFX_BOOT', true);
-require_once dirname(__DIR__, 2) . '/config/config.php';
+require_once __DIR__ . '/bootstrap.php';
 
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
